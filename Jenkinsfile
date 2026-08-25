@@ -9,7 +9,16 @@ pipeline {
         stage('Checkout') {
             steps {
                 echo 'Đang tải source code từ GitHub'
-                checkout scm
+
+                script {
+                    def scmInfo = checkout scm
+
+                    env.SOURCE_COMMIT = scmInfo.GIT_COMMIT
+                    env.SOURCE_BRANCH = scmInfo.GIT_BRANCH
+
+                    echo "Commit đang build: ${env.SOURCE_COMMIT}"
+                    echo "Branch đang build: ${env.SOURCE_BRANCH}"
+                }
             }
         }
 
@@ -40,12 +49,14 @@ pipeline {
                 sh '''
                     mkdir -p output
 
+                    MESSAGE=$(paste -sd " " message.txt)
+
                     echo "Job=$JOB_NAME" > output/build-report.txt
                     echo "Build=$BUILD_NUMBER" >> output/build-report.txt
-                    echo "Commit=$GIT_COMMIT" >> output/build-report.txt
+                    echo "Commit=$SOURCE_COMMIT" >> output/build-report.txt
+                    echo "Branch=$SOURCE_BRANCH" >> output/build-report.txt
                     echo "Workspace=$WORKSPACE" >> output/build-report.txt
-                    echo "Message=$(cat message.txt)" >> output/build-report.txt
-                    date >> output/build-report.txt
+                    echo "Message=$MESSAGE" >> output/build-report.txt
 
                     cat output/build-report.txt
                 '''
@@ -53,43 +64,44 @@ pipeline {
         }
 
         stage('Validate') {
-    steps {
-        echo 'Đang kiểm tra sản phẩm'
+            steps {
+                echo 'Đang kiểm tra sản phẩm'
 
-        sh '''
-            # Kiểm tra file có tồn tại
-            test -f output/build-report.txt
+                sh '''
+                    test -f output/build-report.txt
 
-            # Kiểm tra biến Git không rỗng
-            test -n "$SOURCE_COMMIT"
-            test -n "$SOURCE_BRANCH"
+                    test -n "$SOURCE_COMMIT"
+                    test -n "$SOURCE_BRANCH"
 
-            # Kiểm tra Build là số
-            grep -Eq '^Build=[0-9]+$' output/build-report.txt
+                    grep -Eq '^Build=[0-9]+$' output/build-report.txt
+                    grep -Eq '^Commit=[0-9a-f]{7,64}$' output/build-report.txt
+                    grep -Eq '^Branch=.+$' output/build-report.txt
+                    grep -Eq '^Message=.+$' output/build-report.txt
 
-            # Kiểm tra commit có giá trị hexadecimal
-            grep -Eq '^Commit=[0-9a-f]{7,64}$' output/build-report.txt
+                    echo "Validation thành công"
+                '''
+            }
+        }
 
-            # Kiểm tra branch không rỗng
-            grep -Eq '^Branch=.+$' output/build-report.txt
+        stage('Archive') {
+            steps {
+                echo 'Đang lưu Artifact'
 
-            # Kiểm tra message không rỗng
-            grep -Eq '^Message=.+$' output/build-report.txt
-
-            echo "Validation thành công"
-        '''
-    }
-}
+                archiveArtifacts(
+                    artifacts: 'output/build-report.txt',
+                    fingerprint: true
+                )
+            }
         }
     }
 
     post {
         success {
-            echo 'GitHub Pipeline đã thành công'
+            echo 'Pipeline đã thành công'
         }
 
         failure {
-            echo 'GitHub Pipeline đã thất bại'
+            echo 'Pipeline đã thất bại'
         }
 
         always {
