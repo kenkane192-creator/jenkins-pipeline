@@ -53,27 +53,33 @@ pipeline {
         }
 
         stage('Validate') {
-            steps {
-                echo 'Đang kiểm tra sản phẩm'
+    steps {
+        echo 'Đang kiểm tra sản phẩm'
 
-                sh '''
-                    test -f output/build-report.txt
-                    grep -q "Build=" output/build-report.txt
-                    grep -q "Commit=" output/build-report.txt
-                    grep -q "Message=" output/build-report.txt
-                '''
-            }
-        }
+        sh '''
+            # Kiểm tra file có tồn tại
+            test -f output/build-report.txt
 
-        stage('Archive') {
-            steps {
-                echo 'Đang lưu Artifact'
+            # Kiểm tra biến Git không rỗng
+            test -n "$SOURCE_COMMIT"
+            test -n "$SOURCE_BRANCH"
 
-                archiveArtifacts(
-                    artifacts: 'output/build-report.txt',
-                    fingerprint: true
-                )
-            }
+            # Kiểm tra Build là số
+            grep -Eq '^Build=[0-9]+$' output/build-report.txt
+
+            # Kiểm tra commit có giá trị hexadecimal
+            grep -Eq '^Commit=[0-9a-f]{7,64}$' output/build-report.txt
+
+            # Kiểm tra branch không rỗng
+            grep -Eq '^Branch=.+$' output/build-report.txt
+
+            # Kiểm tra message không rỗng
+            grep -Eq '^Message=.+$' output/build-report.txt
+
+            echo "Validation thành công"
+        '''
+    }
+}
         }
     }
 
