@@ -4,7 +4,6 @@ pipeline {
     options {
         skipDefaultCheckout(true)
     }
-    }
     triggers {
     pollSCM('H/2 * * * *')
     }
