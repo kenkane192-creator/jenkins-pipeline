@@ -132,16 +132,16 @@ stage('Shell Basics') {
             }
         }
 
-        stage('Archive') {
-            steps {
-                echo 'Đang lưu Artifact'
+       stage('Archive') {
+    steps {
+        echo 'Đang lưu Artifact'
 
-                archiveArtifacts(
-                    artifacts: 'output/build-report.txt',
-                    fingerprint: true
-                )
-            }
-        }
+        archiveArtifacts(
+            artifacts: 'output/*.txt',
+            fingerprint: true
+        )
+    }
+}
     }
 
     post {
