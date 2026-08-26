@@ -43,6 +43,53 @@ pipeline {
                 '''
             }
         }
+        
+stage('Shell Basics') {
+    steps {
+        echo 'Đang thực hành Shell cơ bản'
+
+        sh '''
+            set -eu
+
+            PROJECT_NAME="jenkins-shell-lab"
+            REPORT_DIR="output"
+            REPORT_FILE="$REPORT_DIR/shell-report.txt"
+
+            MESSAGE=$(paste -sd " " message.txt)
+
+            mkdir -p "$REPORT_DIR"
+
+            echo "=== BIEN TRONG SHELL ==="
+            echo "Project tự tạo: $PROJECT_NAME"
+            echo "Jenkins Job: $JOB_NAME"
+            echo "Jenkins Build: $BUILD_NUMBER"
+            echo "Jenkins Workspace: $WORKSPACE"
+
+            echo "=== DAU NHAY ==="
+            echo "Nháy đôi sẽ thay biến: $PROJECT_NAME"
+            echo 'Nháy đơn giữ nguyên: $PROJECT_NAME'
+
+            echo "=== COMMAND SUBSTITUTION ==="
+            echo "Message lấy từ file: $MESSAGE"
+
+            echo "=== TAO BAO CAO ==="
+
+            echo "Project=$PROJECT_NAME" > "$REPORT_FILE"
+            echo "Job=$JOB_NAME" >> "$REPORT_FILE"
+            echo "Build=$BUILD_NUMBER" >> "$REPORT_FILE"
+            echo "Workspace=$WORKSPACE" >> "$REPORT_FILE"
+            echo "Message=$MESSAGE" >> "$REPORT_FILE"
+
+            echo "=== NOI DUNG BAO CAO ==="
+            cat "$REPORT_FILE"
+
+            test -s "$REPORT_FILE"
+
+            echo "Exit code của lệnh test: $?"
+            echo "Shell Basics hoàn thành"
+        '''
+    }
+}
 
         stage('Build') {
             steps {
